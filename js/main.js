@@ -103,3 +103,56 @@ if (orderForm) {
     updateSizes();
   });
 }
+
+// The cabinet is a front-end demo; profile data stays in this browser only.
+const accountForm = document.querySelector('#accountForm');
+if (accountForm) {
+  const storageKey = 'pace-profile';
+  const nameInput = document.querySelector('#accountName');
+  const emailInput = document.querySelector('#accountEmail');
+  const status = document.querySelector('#accountStatus');
+  const clearButton = document.querySelector('#accountClear');
+  const renderProfile = () => {
+    const profile = JSON.parse(localStorage.getItem(storageKey) || 'null');
+    if (profile) {
+      nameInput.value = profile.name;
+      emailInput.value = profile.email;
+      status.textContent = `Профиль сохранён для ${profile.name}.`;
+      clearButton.hidden = false;
+    }
+  };
+  accountForm.addEventListener('submit', event => {
+    event.preventDefault();
+    if (!accountForm.reportValidity()) return;
+    localStorage.setItem(storageKey, JSON.stringify({ name: nameInput.value.trim(), email: emailInput.value.trim() }));
+    renderProfile();
+  });
+  clearButton.addEventListener('click', () => {
+    localStorage.removeItem(storageKey);
+    accountForm.reset();
+    clearButton.hidden = true;
+    status.textContent = 'Профиль очищен в этом браузере.';
+  });
+  renderProfile();
+}
+
+// Local demo chat with a small FAQ; it does not send messages to a server.
+if (!document.querySelector('.chat-panel')) {
+  document.body.insertAdjacentHTML('beforeend', `<button class="chat-launch" type="button" aria-label="Открыть чат" aria-expanded="false">✉</button><section class="chat-panel" aria-label="Чат с магазином"><div class="chat-head"><div><strong>PACE · поддержка</strong><small>Демо чат магазина</small></div><button class="chat-close" type="button" aria-label="Закрыть чат">×</button></div><div class="chat-messages" aria-live="polite"><div class="chat-message">Привет! Подскажу по моделям, размерам и часам работы.</div></div><form class="chat-form"><input aria-label="Ваше сообщение" placeholder="Напишите вопрос…" required maxlength="300"><button type="submit" aria-label="Отправить сообщение">↑</button></form></section>`);
+  const launch = document.querySelector('.chat-launch');
+  const panel = document.querySelector('.chat-panel');
+  const chatForm = document.querySelector('.chat-form');
+  const chatInput = chatForm.querySelector('input');
+  const messages = document.querySelector('.chat-messages');
+  const addMessage = (text, who='') => { const item=document.createElement('div'); item.className=`chat-message ${who}`.trim(); item.textContent=text; messages.append(item); messages.scrollTop=messages.scrollHeight; };
+  const closeChat = () => { panel.classList.remove('is-open'); launch.setAttribute('aria-expanded','false'); };
+  launch.addEventListener('click', () => { const open=!panel.classList.contains('is-open'); panel.classList.toggle('is-open',open); launch.setAttribute('aria-expanded',String(open)); if(open) chatInput.focus(); });
+  document.querySelector('.chat-close').addEventListener('click',closeChat);
+  chatForm.addEventListener('submit', event => {
+    event.preventDefault(); const question=chatInput.value.trim(); if(!question) return;
+    addMessage(question,'user'); chatInput.value='';
+    const q=question.toLocaleLowerCase('ru');
+    const answer=q.includes('размер') ? 'Размеры и наличие указаны в карточке модели. Можно оставить заявку — уточним детали по телефону.' : q.includes('время')||q.includes('работ') ? 'Магазин в макете работает с понедельника по субботу, с 10:00 до 20:00.' : q.includes('достав') ? 'Детали доставки можно указать в комментарии к заявке.' : 'Спасибо за вопрос! Это демонстрационный чат: оставь заявку, и на учебном макете появится подтверждение.';
+    window.setTimeout(()=>addMessage(answer),350);
+  });
+}
